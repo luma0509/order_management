@@ -29,7 +29,10 @@ public class OrderService {
 
         // 1. 엔티티 조회
         Member member = memberRepository.findOne(memberId);
-        Item item = itemRepository.findOne(itemId);
+        Item item = itemRepository.findOneWithLock(itemId); // LOCK -> stockQuantity 조회
+
+        // 재고 차감 (재고 검증)
+        item.removeStock(count);
 
         // 2. 주문 상품 생성
         OrderItem orderItem = new OrderItem(item, item.getPrice(), count);
@@ -39,7 +42,6 @@ public class OrderService {
 
         // 4. 저장
         orderRepository.save(order);
-
         return order.getId();
     }
 

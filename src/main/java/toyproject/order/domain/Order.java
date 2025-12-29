@@ -57,6 +57,13 @@ public class Order {
 
     // 주문 취소
     public void cancel() {
+        if (this.status == OrderStatus.CANCEL) {
+            throw new IllegalStateException("이미 취소된 주문 입니다.");
+        }
         this.status = OrderStatus.CANCEL;
+        for (OrderItem orderItem : orderItems) {
+            orderItem.cancel();
+
+        }
     }
 }
