@@ -14,6 +14,7 @@ import toyproject.order.service.OrderService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
@@ -73,7 +74,6 @@ public class OrderServiceConcurrencyTest {
                     success.incrementAndGet();
                 } catch (IllegalStateException e) {
                     // 실패 정상
-                    System.out.println("에러 발생 이유: " + e.getMessage());
                     fail.incrementAndGet();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -96,6 +96,61 @@ public class OrderServiceConcurrencyTest {
         assertThat(fail.get()).isEqualTo(1);
         assertThat(stock).isEqualTo(0);
 
+    }
+
+    @Test
+    void 낙관적락_재시도_정합성() throws Exception {
+
+        TestIds ids = tx.execute(status -> {
+            Member m = new Member("user1");
+            memberRepository.save(m);
+
+            Item i = new Item("item", 1000, 1);
+            itemRepository.save(i);
+
+            return new TestIds(m.getId(), i.getId());
+        });
+
+        Long memberId = ids.memberId;
+        Long itemId = ids.itemId;
+
+        int threadCount = 2;
+        ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(threadCount);
+
+        AtomicInteger success = new AtomicInteger(0);
+        AtomicInteger stockFail = new AtomicInteger(0);
+        AtomicInteger otherFail = new AtomicInteger(0);
+
+        for (int i = 0; i < threadCount; i++) {
+            pool.submit(() -> {
+                try {
+                    start.await();
+                    orderService.orderWithOptimisticRetry(memberId, itemId, 1);
+                    success.incrementAndGet();
+                } catch (IllegalStateException e) { // 재고 부족
+                    stockFail.incrementAndGet();
+                } catch (Exception e) {
+                    otherFail.incrementAndGet();
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        done.await(10, TimeUnit.SECONDS);
+        pool.shutdown();
+
+        Integer finalStock = tx.execute(status ->
+                itemRepository.findOne(itemId).getStockQuantity()
+        );
+
+        assertThat(success.get()).isEqualTo(1);
+        assertThat(stockFail.get()).isEqualTo(1);
+        assertThat(otherFail.get()).isEqualTo(0);
+        assertThat(finalStock).isEqualTo(0);
     }
 
     static class TestIds {

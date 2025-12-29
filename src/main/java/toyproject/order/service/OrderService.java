@@ -1,6 +1,8 @@
 package toyproject.order.service;
 
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import toyproject.order.domain.Item;
@@ -15,11 +17,11 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class OrderService {
     private final MemberRepository memberRepository;
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
+    private final OrderTxService orderTxService;
 
     /**
      * 주문 생성
@@ -63,5 +65,27 @@ public class OrderService {
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findOne(orderId);
         order.cancel();
+    }
+
+    @Transactional
+    public Long orderWithOptimisticRetry(Long memberId, Long itemId, int count) {
+        int maxRetry =5;
+
+        for (int attempt = 0; attempt <= maxRetry; attempt++) {
+            try {
+                return orderTxService.orderWithOptimistic(memberId, itemId, count);
+            } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
+                // 낙관적 충돌만 재시도
+                if (attempt == maxRetry) throw e;
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ex) {
+                }
+            } catch (IllegalStateException stock) {
+                // 재고 부족시 재시도 금지
+                throw stock;
+            }
+        }
+        throw new IllegalStateException("unreachable");
     }
 }

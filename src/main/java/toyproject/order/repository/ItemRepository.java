@@ -3,7 +3,6 @@ package toyproject.order.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Repository;
 import toyproject.order.domain.Item;
 
@@ -32,7 +31,11 @@ public class ItemRepository {
                         "select i from Item i where i.id = :id", Item.class)
                 .setParameter("id", id)
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-                .setHint("javax.persistence,lock.timeout", 3000)
+                .setHint("jakarta.persistence.lock.timeout", 3000)
                 .getSingleResult();
+    }
+
+    public Item findOneWithOptimisticLock(Long id) {
+        return em.find(Item.class, id, LockModeType.OPTIMISTIC);
     }
 }

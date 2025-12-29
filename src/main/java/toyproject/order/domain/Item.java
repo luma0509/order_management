@@ -28,12 +28,14 @@ public class Item {
         this.stockQuantity = stockQuantity;
     }
 
+    @Version
+    private Long version; // 낙관적 락 핵심
+
     // 재고 차감
     public void removeStock(int quantity) {
-        if (this.stockQuantity < quantity) {
-            throw new IllegalStateException("재고 부족");
-        }
-        this.stockQuantity -= quantity;
+        int rest = this.stockQuantity - quantity;
+        if (rest < 0) throw new IllegalStateException("재고 부족");
+        this.stockQuantity = rest;
     }
 
     // 재고 복구
