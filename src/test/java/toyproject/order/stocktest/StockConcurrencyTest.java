@@ -44,7 +44,7 @@ public class StockConcurrencyTest {
     }
 
     @Test
-    public void 동시_주문_재고_음수_안됨() throws Exception{
+    public void 동시_주문_재고_음수_안됨1() throws Exception{
         //given
         int threadCount = 2;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
