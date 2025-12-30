@@ -19,7 +19,7 @@ public class OrderApiController {
     @GetMapping("/api/orders")
     public List<OrderDto> orders(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "0") int size
+            @RequestParam(defaultValue = "20") int size
 
     ) {
         return orderQueryService.findOrders(page, size);
