@@ -209,11 +209,6 @@
 
 
 </details>
-    <summary>
-
-## Orders API 성능 최적화
-
-</summary>
 
 ---
 
@@ -225,8 +220,10 @@
 - **N+1 쿼리 문제**를 개선하며
 - 최종적으로 **Query DTO 직접 조회(V4)**로 필요한 데이터만 조회/전송하도록 최적화했습니다.
 
----
 <details>
+ <summary> API 최적화 </summary>
+
+
 ### Endpoints
 
 | Version | Endpoint | 반환 타입 | 핵심 포인트 |
