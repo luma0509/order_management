@@ -179,7 +179,7 @@
   }
 ]
 ```
-![Pasted Graphic.png](../../../../Library/Group%20Containers/group.com.apple.notes/Accounts/608DC193-70B2-4AF9-8FB7-85307BCA6ED0/Media/5E1D1287-BAD6-41B2-88DD-67C518ECB0C1/1_94486A72-49C8-407B-A6A3-67B67FC9B0D7/Pasted%20Graphic.png)
+<img width="1115" height="841" alt="Pasted Graphic" src="https://github.com/user-attachments/assets/6a556dc0-f128-479d-90e5-06016cb80340" />
 
 ### Orders Cancel API
 
@@ -193,13 +193,16 @@
   "status" : "CANCEL"
 }
 ```
-![Pasted Graphic 1.png](../../../../Library/Group%20Containers/group.com.apple.notes/Accounts/608DC193-70B2-4AF9-8FB7-85307BCA6ED0/Media/649A77C0-476A-431A-8FBB-6D0A8375627C/1_47E7DCDE-DC8D-456F-808C-AEF95A42B168/Pasted%20Graphic%201.png)
+
+<img width="1115" height="841" alt="Pasted Graphic 1" src="https://github.com/user-attachments/assets/f6457fc1-f47e-4cea-b40d-5589786ca480" />
 
 
 #### 2) 주문 취소 후 재고 수량 복구
 - stockQuantity : 4 ➡️ 5
-- 
-![Pasted Graphic.png](../../../../Library/Group%20Containers/group.com.apple.notes/Accounts/608DC193-70B2-4AF9-8FB7-85307BCA6ED0/Media/5E1D1287-BAD6-41B2-88DD-67C518ECB0C1/1_94486A72-49C8-407B-A6A3-67B67FC9B0D7/Pasted%20Graphic.png)
+
+<img width="1115" height="841" alt="Pasted Graphic" src="https://github.com/user-attachments/assets/c3a7dc66-e2cd-431d-ad58-65a2b14055c5" />
+
+
 ### Notes
 - 쓰기 작업(회원/상품/주문 생성) 은 서비스 계층에서 @Transactional로 처리하여 영속성 컨텍스트/트랜잭션 경계가 보장되도록 구성했다.
 - 예외 처리(중복 회원 등)는 @RestControllerAdvice 기반으로 HTTP 상태 코드로 응답한다.
