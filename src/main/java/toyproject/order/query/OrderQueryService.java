@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import toyproject.order.domain.Order;
 import toyproject.order.domain.OrderItem;
-import toyproject.order.query.dto.OrderDto;
-import toyproject.order.query.dto.OrderItemDto;
+import toyproject.order.query.dto.OrderQueryDto;
+import toyproject.order.query.dto.OrderItemQueryDto;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class OrderQueryService {
 
     private final OrderQueryRepository orderQueryRepository;
 
-    public List<OrderDto> findOrders(int age, int size) {
+    public List<OrderQueryDto> findOrders(int age, int size) {
         int offset = age * size;
 
         // 1) 주문 (To-One만) 페이징 조회
@@ -39,10 +39,10 @@ public class OrderQueryService {
         }
 
         // 4) orderId -> OrderItemDto 리스트로 그룹핑
-        Map<Long, List<OrderItemDto>> itemsMap = orderItems.stream().collect(Collectors.groupingBy(
+        Map<Long, List<OrderItemQueryDto>> itemsMap = orderItems.stream().collect(Collectors.groupingBy(
                 oi -> oi.getOrder().getId(),
                 Collectors.mapping(
-                        oi -> new OrderItemDto(
+                        oi -> new OrderItemQueryDto(
                                 oi.getItem().getName(),
                                 oi.getOrderPrice(),
                                 oi.getCount()
@@ -52,7 +52,7 @@ public class OrderQueryService {
 
         // 5) 주문 DTO 로 변환
         return orders.stream()
-                .map(o -> new OrderDto(
+                .map(o -> new OrderQueryDto(
                         o.getId(),
                         o.getMember().getName(),
                         o.getOrderDate(),
@@ -62,15 +62,15 @@ public class OrderQueryService {
                 .toList();
     }
 
-    public List<OrderDto> findOrderSimple() {
+    public List<OrderQueryDto> findOrderSimple() {
         List<Order> orders = orderQueryRepository.findOrdersWithItems();
 
-        return orders.stream().map(o -> new OrderDto(
+        return orders.stream().map(o -> new OrderQueryDto(
                 o.getId(),
                 o.getMember().getName(),
                 o.getOrderDate(),
                 o.getStatus(),
-                o.getOrderItems().stream().map(oi -> new OrderItemDto(
+                o.getOrderItems().stream().map(oi -> new OrderItemQueryDto(
                         oi.getItem().getName(),
                         oi.getOrderPrice(),
                         oi.getCount()

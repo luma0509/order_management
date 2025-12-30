@@ -86,9 +86,9 @@
 **Response**
 ```json
 {
-  { "id": 1, "name": "user1" },
-  { "id": 2, "name": "user2" },
-  { "id": 3, "name": "user3" }
+{ "id": 1, "name": "user1" },
+{ "id": 2, "name": "user2" },
+{ "id": 3, "name": "user3" }
 }
 ```
 <img width="1115" height="842" alt="Pasted Graphic 2" src="https://github.com/user-attachments/assets/8e57f202-a30c-4f3b-949b-85371ebcdd61" />
@@ -125,10 +125,10 @@
 **Response**
 ```json
 {
- "id": 1,
-    "name": "itemA",
-    "price": 10000,
-    "stockQuantity": 5}
+  "id": 1,
+  "name": "itemA",
+  "price": 10000,
+  "stockQuantity": 5}
 ```
 <img width="1117" height="846" alt="Pasted Graphic 5" src="https://github.com/user-attachments/assets/29347d0f-559f-43d8-bfbd-d2433e2388ac" />
 </details>
@@ -144,9 +144,9 @@
 **Request**
 ```json
 {
-    "memberId":1,
-    "itemId:1,
-    "count:1
+  "memberId":1,
+  "itemId:1,
+  "count:1
 }
 ```
 **Response 200**
@@ -179,7 +179,7 @@
   }
 ]
 ```
-![Pasted Graphic.png](../../../../Library/Group%20Containers/group.com.apple.notes/Accounts/608DC193-70B2-4AF9-8FB7-85307BCA6ED0/Media/5E1D1287-BAD6-41B2-88DD-67C518ECB0C1/1_94486A72-49C8-407B-A6A3-67B67FC9B0D7/Pasted%20Graphic.png)
+<img width="1115" height="841" alt="Pasted Graphic" src="https://github.com/user-attachments/assets/6a556dc0-f128-479d-90e5-06016cb80340" />
 
 ### Orders Cancel API
 
@@ -193,19 +193,78 @@
   "status" : "CANCEL"
 }
 ```
-![Pasted Graphic 1.png](../../../../Library/Group%20Containers/group.com.apple.notes/Accounts/608DC193-70B2-4AF9-8FB7-85307BCA6ED0/Media/649A77C0-476A-431A-8FBB-6D0A8375627C/1_47E7DCDE-DC8D-456F-808C-AEF95A42B168/Pasted%20Graphic%201.png)
+
+<img width="1115" height="841" alt="Pasted Graphic 1" src="https://github.com/user-attachments/assets/f6457fc1-f47e-4cea-b40d-5589786ca480" />
 
 
 #### 2) 주문 취소 후 재고 수량 복구
 - stockQuantity : 4 ➡️ 5
-- 
-![Pasted Graphic.png](../../../../Library/Group%20Containers/group.com.apple.notes/Accounts/608DC193-70B2-4AF9-8FB7-85307BCA6ED0/Media/5E1D1287-BAD6-41B2-88DD-67C518ECB0C1/1_94486A72-49C8-407B-A6A3-67B67FC9B0D7/Pasted%20Graphic.png)
+
+<img width="1115" height="841" alt="Pasted Graphic" src="https://github.com/user-attachments/assets/c3a7dc66-e2cd-431d-ad58-65a2b14055c5" />
+
+
 ### Notes
 - 쓰기 작업(회원/상품/주문 생성) 은 서비스 계층에서 @Transactional로 처리하여 영속성 컨텍스트/트랜잭션 경계가 보장되도록 구성했다.
 - 예외 처리(중복 회원 등)는 @RestControllerAdvice 기반으로 HTTP 상태 코드로 응답한다.
 
 
 </details>
+    <summary>
 
+## Orders API 성능 최적화
+
+</summary>
 
 ---
+
+## Orders API 성능 최적화 (V1 ~ V4)
+
+이 프로젝트는 주문 조회 API를 **V1 → V4**로 단계적으로 개선하며,
+
+- **엔티티 직접 반환 문제(노출/직렬화/연관관계 의존)**를 제거하고
+- **N+1 쿼리 문제**를 개선하며
+- 최종적으로 **Query DTO 직접 조회(V4)**로 필요한 데이터만 조회/전송하도록 최적화했습니다.
+
+---
+<details>
+### Endpoints
+
+| Version | Endpoint | 반환 타입 | 핵심 포인트 |
+|---|---|---|---|
+| V1 | `GET /orders/v1` | `List<Order>` | 엔티티 직접 반환(문제 재현/학습용). 지연 로딩 이슈를 강제 초기화로 회피하며 N+1 문제를 확인 |
+| V2 | `GET /orders/v2` | `List<OrderResponse>` | 엔티티 → Response DTO 변환으로 API 스펙 안정화 (N+1 가능) |
+| V3 | `GET /orders/v3` | `List<OrderResponse>` | fetch join으로 N+1 최적화 |
+| V4 | `GET /orders` | `List<OrderQueryDto>` | Query DTO 직접 조회 + 페이징(`page`, `size`) |
+
+---
+
+### V4 Query DTO 네이밍 리팩터링
+
+- `OrderDto` → `OrderQueryDto`
+- `OrderItemDto` → `OrderItemQueryDto`
+
+---
+
+### Request Example (V4)
+
+`GET /orders?page=0&size=20`
+
+---
+
+### Response Example (V4)
+
+```json
+[
+  {
+    "orderId": 1,
+    "memberName": "userA",
+    "orderDate": "2025-12-31T10:10:10",
+    "status": "ORDER",
+    "items": [
+      { "itemName": "itemA", "price": 10000, "count": 2 }
+    ]
+  }
+]
+```
+
+</details>
