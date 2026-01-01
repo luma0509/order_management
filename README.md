@@ -264,4 +264,326 @@
 ]
 ```
 
+---
+
+
+### 성능 개선 포인트(쿼리 발생 패턴 비교)
+
+주문이 N건이고, 주문당 주문상품이 M건이라고 가정할 때:
+
+- **V1 / V2**: 연관 컬렉션 접근 과정에서 N+1이 발생할 수 있어, 전체 쿼리가 데이터 규모에 따라 증가 (N, N*M에 비례)
+- **V3**: fetch join으로 연관 데이터를 한 번에 가져와 N+1을 크게 완화
+- **V4**: Query DTO 기반으로 루트(주문) 조회 + 주문상품 IN 조회 방식으로 구성하여, 페이징 환경에서도 쿼리 수를 예측 가능하게 유지
+
+---
+
+### Request Example (V4)
+
+`GET /orders?page=0&size=20`
+
+---
+
+### Response Example (V4)
+
+```json
+[
+  {
+    "orderId": 1,
+    "memberName": "userA",
+    "orderDate": "2025-12-31T10:10:10",
+    "status": "ORDER",
+    "items": [
+      { "itemName": "itemA", "price": 10000, "count": 2 }
+    ]
+  }
+]
+```
+<img width="1677" height="1347" alt="image" src="https://github.com/user-attachments/assets/fc15b759-e13b-4dad-9474-9363b0903e81" />
+
+---
+
+## PostMan Capture (V1~V4)
+1) **V1**
+- `GET http://localhost:8080/orders/v1`
+<img width="1440" height="1452" alt="image" src="https://github.com/user-attachments/assets/4fddd042-6323-49ce-b50b-0a098c1ba121" />
+<img width="1440" height="1451" alt="image" src="https://github.com/user-attachments/assets/80ab453e-0f95-4db4-81d5-5fcc42e19c3c" />
+
+<details>
+<summary><b>SQL Log (V1)</b></summary>
+
+```text
+Hibernate: 
+    select
+        o1_0.order_id,
+        o1_0.member_id,
+        o1_0.order_date,
+        o1_0.status 
+    from
+        orders o1_0
+Hibernate: 
+    select
+        m1_0.member_id,
+        m1_0.name 
+    from
+        member m1_0 
+    where
+        m1_0.member_id=?
+Hibernate: 
+    select
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        oi1_0.item_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity 
+    from
+        item i1_0 
+    where
+        i1_0.item_id=?
+Hibernate: 
+    select
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        oi1_0.item_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity 
+    from
+        item i1_0 
+    where
+        i1_0.item_id=?
+Hibernate: 
+    select
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        oi1_0.item_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity 
+    from
+        item i1_0 
+    where
+        i1_0.item_id=?
+Hibernate: 
+    select
+        o1_0.member_id,
+        o1_0.order_id,
+        o1_0.order_date,
+        o1_0.status 
+    from
+        orders o1_0 
+    where
+        o1_0.member_id=?
+```
 </details>
+
+---
+
+2) **V2**
+- `GET http://localhost:8080/orders/v2`
+<img width="1440" height="1452" alt="image" src="https://github.com/user-attachments/assets/d6276d8b-f21e-41c2-b12d-7c86db081f18" />
+
+<details>
+<summary><b>SQL Log (V2)</b></summary>
+
+```text
+Hibernate: 
+    select
+        o1_0.order_id,
+        o1_0.member_id,
+        o1_0.order_date,
+        o1_0.status 
+    from
+        orders o1_0
+Hibernate: 
+    select
+        m1_0.member_id,
+        m1_0.name 
+    from
+        member m1_0 
+    where
+        m1_0.member_id=?
+Hibernate: 
+    select
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        oi1_0.item_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity 
+    from
+        item i1_0 
+    where
+        i1_0.item_id=?
+Hibernate: 
+    select
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        oi1_0.item_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity 
+    from
+        item i1_0 
+    where
+        i1_0.item_id=?
+Hibernate: 
+    select
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        oi1_0.item_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity 
+    from
+        item i1_0 
+    where
+        i1_0.item_id=?
+```
+</details>
+
+---
+
+3) **V3**
+- `GET http://localhost:8080/orders/v3`
+<img width="1440" height="1450" alt="image" src="https://github.com/user-attachments/assets/f401668e-ed3b-4656-967e-0b188d1a52b3" />
+
+<details>
+<summary><b>SQL Log (V3)</b></summary>
+
+```text
+Hibernate: 
+    select
+        distinct o1_0.order_id,
+        m1_0.member_id,
+        m1_0.name,
+        o1_0.order_date,
+        oi1_0.order_id,
+        oi1_0.order_item_id,
+        oi1_0.count,
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity,
+        oi1_0.order_price,
+        o1_0.status 
+    from
+        orders o1_0 
+    join
+        member m1_0 
+            on m1_0.member_id=o1_0.member_id 
+    join
+        order_item oi1_0 
+            on o1_0.order_id=oi1_0.order_id 
+    join
+        item i1_0 
+            on i1_0.item_id=oi1_0.item_id
+
+```
+</details>
+
+---
+
+4) **V4**
+- `GET http://localhost:8080/orders` (v4)
+<img width="1440" height="1457" alt="image" src="https://github.com/user-attachments/assets/8855d1fd-6909-40db-be61-2a393c11e98d" />
+
+<details>
+<summary><b>SQL Log (V4)</b></summary>
+
+```text
+Hibernate: 
+    select
+        o1_0.order_id,
+        m1_0.member_id,
+        m1_0.name,
+        o1_0.order_date,
+        o1_0.status 
+    from
+        orders o1_0 
+    join
+        member m1_0 
+            on m1_0.member_id=o1_0.member_id 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        oi1_0.order_item_id,
+        oi1_0.count,
+        i1_0.item_id,
+        i1_0.name,
+        i1_0.price,
+        i1_0.stock_quantity,
+        oi1_0.order_id,
+        oi1_0.order_price 
+    from
+        order_item oi1_0 
+    join
+        item i1_0 
+            on i1_0.item_id=oi1_0.item_id 
+    where
+        oi1_0.order_id in (?, ?, ?)
+
+```
+</details>
+
+
+</details>
+
+
