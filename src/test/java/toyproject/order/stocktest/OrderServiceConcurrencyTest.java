@@ -1,6 +1,7 @@
 package toyproject.order.stocktest;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +15,7 @@ import toyproject.order.repository.ItemRepository;
 import toyproject.order.repository.MemberRepository;
 import toyproject.order.service.OrderService;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +45,7 @@ public class OrderServiceConcurrencyTest {
         // 1) 데이터 준비
         TestIds ids = tx.execute(status ->
         {
-            Member m = new Member("user1");
+            Member m = new Member("user1-" + UUID.randomUUID());
             memberRepository.save(m);
 
             Item i = new Item("item", 1000, 1);
@@ -103,7 +105,7 @@ public class OrderServiceConcurrencyTest {
     void 낙관적락_재시도_정합성() throws Exception {
 
         TestIds ids = tx.execute(status -> {
-            Member m = new Member("user1");
+            Member m = new Member("user1-" + UUID.randomUUID());
             memberRepository.save(m);
 
             Item i = new Item("item", 1000, 1);
