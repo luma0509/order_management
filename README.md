@@ -4,25 +4,29 @@
 
 - Swagger UI: http://localhost:8080/swagger-ui/index.html
 - OpenAPI JSON: http://localhost:8080/v3/api-docs
-- 검증 방법: Swagger에서 Try it out → Execute로 호출
+
+> Swagger는 **요청/응답 스펙 확인** 용도로 사용한다.
 
 <details>
-<summary> 🔽 사용방법 </summary>
+<summary> 🔽 Swagger 사용법 </summary>
  
 ### 사용 방법
 
 1. Swagger UI 접속
 ![스웨거 풀샷](docs/images/swagger_fullshout.png)
 
-2. 대표 API 스펙 확인 (Request/Response)
-- 주문 생성: `Post /api/orders`
+2. API 선택 후 스펙 확인
+- Members / Items / Orders 섹션 펼친뒤 원하는 Endpoint 클릭 
+- Request Body / Parameters / Response Schema 확인
+
+- 주문 생성: `POST /api/orders`
 ![생성](docs/images/orders_swagger_post.png)
-- 주문 조회: `GET /api/orders/V4`
+
+- 주문 조회: `GET /api/orders/v4`
 ![V4주문조회](docs/images/orders_swagger_get_v4.png)
 
-3. 'GET /api/orders/v4' Try it out 직접 호출 테스트
+3. 'GET /api/orders/v4' Try it out 호출 예시 실행
 ![v4_try_it_out](docs/images/v4_api_test.png)
-
 
 </details>
 
@@ -72,13 +76,11 @@
 
 ---
 
-## REST API (Postman 검증)
+## API 검증 (Postman 검증)
 
 현재 프로젝트는 Postman으로 아래 흐름을 검증.
 
-- 회원 생성 → 회원 목록 조회
-- 상품 생성 → 상품 목록 조회
-- 주문 생성 → 주문 목록 조회(주문 + 주문상품 포함)
+> Postman은 **시나리오 기반 흐름 테스트**(회원 → 상품 → 주문 → 조회/취소) 용도로 사용.
 
 <details>
     <summary>🔽Member API</summary>
@@ -98,15 +100,15 @@
 **Response 200**
 ```json
 {
-  "memberId:1"
+  "memberId":1
 } 
 ```
-![회원 생성](docs/images/order_post.png)
+![회원 생성](docs/images/member_post.png)
 
 
 #### 2) 회원 중복 생성 방지
 - **POST** `/api/members`
-  **Response409**
+- **Response 409**
   이미 존재하는 회원 입니다.
 
 ![회원 생성 중복 방지](docs/images/member_duplicate_error409.png)
@@ -116,11 +118,11 @@
 
 **Response**
 ```json
-{
+[
   { "id": 1, "name": "user1" },
   { "id": 2, "name": "user2" },
   { "id": 3, "name": "user3" }
-}
+]
 ```
 ![회원 목록 조회](docs/images/member_findall.png)
 
@@ -145,7 +147,7 @@
 **Response**
 ```json
 {
-  "itemId:1
+  "itemId":1
 }
 ```
 ![상품 생성](docs/images/items_post.png)
@@ -154,12 +156,14 @@
 
 **Response**
 ```json
-{
-  "id": 1,
-  "name": "itemA",
-  "price": 10000,
-  "stockQuantity": 5
-}
+[
+  {
+    "id": 1,
+    "name": "itemA",
+    "price": 10000,
+    "stockQuantity": 5
+  }
+]
 ```
 
 ![상품 목록 조회](docs/images/item_findall.png)
@@ -177,8 +181,8 @@
 ```json
 {
   "memberId":1,
-  "itemId:1,
-  "count:1
+  "itemId":1,
+  "count":1
 }
 ```
 **Response 200**
@@ -217,8 +221,8 @@
 #### 1) 주문 취소
 - **POST** `/api/orders/1/cancel`
 
+**Response**
 ```json
-** Response **
 {
   "orderId": 1,
   "status" : "CANCEL"
@@ -255,12 +259,12 @@
 
 ### Endpoints
 
-| Version | Endpoint | 반환 타입 | 핵심 포인트 |
-|---|---|---|---|
+| Version | Endpoint             | 반환 타입 | 핵심 포인트 |
+|---|----------------------|---|---|
 | V1 | `GET /api/orders/v1` | `List<Order>` | 엔티티 직접 반환(문제 재현/학습용). 지연 로딩 이슈를 강제 초기화로 회피하며 N+1 문제를 확인 |
 | V2 | `GET /api/orders/v2` | `List<OrderResponse>` | 엔티티 → Response DTO 변환으로 API 스펙 안정화 (N+1 가능) |
 | V3 | `GET /api/orders/v3` | `List<OrderResponse>` | fetch join으로 N+1 최적화 |
-| V4 | `GET /api/orders` | `List<OrderQueryDto>` | Query DTO 직접 조회 + 페이징(`page`, `size`) |
+| V4 | `GET /api/orders/v4` | `List<OrderQueryDto>` | Query DTO 직접 조회 + 페이징(`page`, `size`) |
 
 ---
 
@@ -270,31 +274,6 @@
 - `OrderItemDto` → `OrderItemQueryDto`
 
 ---
-
-### Request Example (V4)
-
-`GET /orders?page=0&size=20`
-
----
-
-### Response Example (V4)
-
-```json
-[
-  {
-    "orderId": 1,
-    "memberName": "userA",
-    "orderDate": "2025-12-31T10:10:10",
-    "status": "ORDER",
-    "items": [
-      { "itemName": "itemA", "price": 10000, "count": 2 }
-    ]
-  }
-]
-```
-
----
-
 
 ### 성능 개선 포인트(쿼리 발생 패턴 비교)
 
@@ -308,7 +287,7 @@
 
 ### Request Example (V4)
 
-`GET /orders?page=0&size=20`
+`GET /api/orders/v4?page=0&size=20`
 
 ---
 
@@ -461,9 +440,6 @@ Hibernate:
 
 <br>
 
-<details>
-<summary>&nbsp; 🔽SQL Log (V2)</summary>
-
 ```text
 Hibernate: 
     select
@@ -546,7 +522,6 @@ Hibernate:
         i1_0.item_id=?
 ```
 </details>
-</details>
 
 
 ---
@@ -563,9 +538,6 @@ Hibernate:
 ![v3_postman](docs/images/v3_postman.png)
 
 <br>
-
-<details>
-<summary><b>   🔽 Log (V3)</b></summary>
 
 ```text
 Hibernate: 
@@ -597,14 +569,13 @@ Hibernate:
 
 ```
 </details>
-</details>
 
 ---
 <details>
     <summary>🟦V4</summary>
 ### 4) **V4**
-- `GET http://localhost:8080/orders` (v4)
-- **Endpoint**: `GET /api/orders?page=0&size=20`
+- `GET http://localhost:8080/orders/v4`
+- **Endpoint**: `GET /api/orders/v4?page=0&size=20`
 - **반환 타입**: `List<OrderQueryDto>`
 - **핵심**:
     - 엔티티 로딩 대신 Query DTO로 필요한 필드만 직접 조회
@@ -614,9 +585,6 @@ Hibernate:
 ![v4_postman](docs/images/v4_postman.png)
     
 <br>
-
-<details>
-    <summary><b>    &nbsp; 🔽SQL Log (V4)</b></summary>
 
 ```text
 Hibernate: 
@@ -654,7 +622,6 @@ Hibernate:
         oi1_0.order_id in (?, ?, ?)
 
 ```
-</details>
 </details>
 
 </details>
